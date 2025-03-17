@@ -180,6 +180,13 @@ class HrAnalyticsCdkStack(Stack):
             analytics_table,
         )
 
+        dashboard_stats_lambda = self.create_lambda(
+            "DashboardStatsLambda",
+            "dashboard_stats_lambda.handler",
+            lambda_role,
+            analytics_table,
+        )
+
         # API Gateway
         api = apigateway.RestApi(
             self,
@@ -205,6 +212,9 @@ class HrAnalyticsCdkStack(Stack):
         )
         self.create_api_method(
             metrics_resource, "demographics", demographics_lambda, authorizer
+        )
+        self.create_api_method(
+            metrics_resource, "dashboard_stats", dashboard_stats_lambda, authorizer
         )
 
         # Output User Pool ID & API Endpoint

@@ -27,6 +27,9 @@ def handler(event, context):
         recent_category_counts = count_categories(recent_items)
         previous_category_counts = count_categories(previous_items)
 
+        # Compute percentage distribution
+        category_distribution = compute_percentage_distribution(recent_category_counts)
+
         # Calculate trending categories
         trending_topics = calculate_trending(
             recent_category_counts, previous_category_counts
@@ -36,9 +39,9 @@ def handler(event, context):
             "statusCode": 200,
             "body": json.dumps(
                 {
-                    "category_distribution": recent_category_counts,
+                    "category_distribution": category_distribution,
                     "top_5_categories": sorted(
-                        recent_category_counts.items(), key=lambda x: x[1], reverse=True
+                        category_distribution, key=lambda x: x["count"], reverse=True
                     )[:5],
                     "trending_topics": trending_topics,
                 }
@@ -69,6 +72,22 @@ def count_categories(items):
         category = item.get("category", "unknown")
         counts[category] = counts.get(category, 0) + 1
     return counts
+
+
+def compute_percentage_distribution(category_counts):
+    """Compute percentage distribution for each category."""
+    total = sum(category_counts.values())
+    if total == 0:
+        return []
+
+    return [
+        {
+            "category": category,
+            "count": count,
+            "percentage": round((count / total) * 100, 2),
+        }
+        for category, count in category_counts.items()
+    ]
 
 
 def calculate_trending(recent_counts, previous_counts):

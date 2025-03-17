@@ -68,11 +68,19 @@ def filter_by_date_range(items, start_date):
 
 def process_demographic_metrics(items):
     """
-    Computes demographic analytics:
+    Computes demographic analytics as percentages:
     - Department usage breakdown
     - Usage by seniority level
     - New vs. returning users
     """
+
+    total_items = len(items)
+    if total_items == 0:
+        return {
+            "department_usage": {},
+            "seniority_usage": {},
+            "new_vs_returning": {},
+        }
 
     department_usage = {}
     seniority_usage = {"junior": 0, "mid": 0, "senior": 0, "unknown": 0}
@@ -94,6 +102,16 @@ def process_demographic_metrics(items):
         is_new_user = item.get("new_user", "false").lower() == "true"
         new_vs_returning["new" if is_new_user else "returning"] += 1
 
+    # Convert counts to percentages
+    department_usage = {
+        k: round((v / total_items) * 100, 2) for k, v in department_usage.items()
+    }
+    seniority_usage = {
+        k: round((v / total_items) * 100, 2) for k, v in seniority_usage.items()
+    }
+    new_vs_returning = {
+        k: round((v / total_items) * 100, 2) for k, v in new_vs_returning.items()
+    }
 
     return {
         "department_usage": department_usage,
