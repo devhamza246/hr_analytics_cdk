@@ -1,0 +1,412 @@
+{
+	"info": {
+		"_postman_id": "82333564-acad-4511-91b3-f2051e15e08a",
+		"name": "HR Analytics",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "25658901"
+	},
+	"item": [
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "1.0 Register a New User",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-amz-json-1.1",
+								"type": "text"
+							},
+							{
+								"key": "X-Amz-Target",
+								"value": "AWSCognitoIdentityProviderService.SignUp",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"ClientId\": \"{{CLIENT_ID}}\",\r\n    \"Username\": \"admin@gmail.com\",\r\n    \"Password\": \"StrongPassword123!\",\r\n    \"UserAttributes\": [\r\n        {\r\n            \"Name\": \"email\",\r\n            \"Value\": \"admin@gmail.com\"\r\n        }\r\n    ]\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://cognito-idp.us-east-1.amazonaws.com/",
+							"protocol": "https",
+							"host": [
+								"cognito-idp",
+								"us-east-1",
+								"amazonaws",
+								"com"
+							],
+							"path": [
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "2.0 Verify Email",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-amz-json-1.1",
+								"type": "text"
+							},
+							{
+								"key": "X-Amz-Target",
+								"value": "AWSCognitoIdentityProviderService.ConfirmSignUp",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"ClientId\": \"{{CLIENT_ID}}\",\r\n    \"Username\": \"admin@gmail.com\",\r\n    \"ConfirmationCode\": \"<CODE_RECEIVED_IN_EMAIL>\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://cognito-idp.us-east-1.amazonaws.com/",
+							"protocol": "https",
+							"host": [
+								"cognito-idp",
+								"us-east-1",
+								"amazonaws",
+								"com"
+							],
+							"path": [
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "3.0 Login & Get an Access Token",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-amz-json-1.1",
+								"type": "text"
+							},
+							{
+								"key": "X-Amz-Target",
+								"value": "AWSCognitoIdentityProviderService.InitiateAuth",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"AuthFlow\": \"USER_PASSWORD_AUTH\",\r\n    \"ClientId\": \"{{CLIENT_ID}}\",\r\n    \"AuthParameters\": {\r\n        \"USERNAME\": \"admin@gmail.com\",\r\n        \"PASSWORD\": \"StrongPassword123!\"\r\n    }\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://cognito-idp.us-east-1.amazonaws.com/",
+							"protocol": "https",
+							"host": [
+								"cognito-idp",
+								"us-east-1",
+								"amazonaws",
+								"com"
+							],
+							"path": [
+								""
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Get Analytics",
+			"item": [
+				{
+					"name": "Get Dashboard Stats",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://{{API_ID}}.execute-api.us-east-1.amazonaws.com/prod/metrics/dashboard_stats",
+							"protocol": "https",
+							"host": [
+								"{{API_ID}}",
+								"execute-api",
+								"us-east-1",
+								"amazonaws",
+								"com"
+							],
+							"path": [
+								"prod",
+								"metrics",
+								"dashboard_stats"
+							],
+							"query": [
+								{
+									"key": "range",
+									"value": "3m",
+									"description": "7d, 30d, 3m, 6m, 9m - Optional",
+									"disabled": true
+								},
+								{
+									"key": "start_date",
+									"value": "2025-03-12",
+									"description": "Date - Optional",
+									"disabled": true
+								},
+								{
+									"key": "end_date",
+									"value": "2025-03-13",
+									"description": "Date - Optional",
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Usage",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://{{API_ID}}.execute-api.us-east-1.amazonaws.com/prod/metrics/usage",
+							"protocol": "https",
+							"host": [
+								"{{API_ID}}",
+								"execute-api",
+								"us-east-1",
+								"amazonaws",
+								"com"
+							],
+							"path": [
+								"prod",
+								"metrics",
+								"usage"
+							],
+							"query": [
+								{
+									"key": "range",
+									"value": "3m",
+									"description": "7d, 30d, 3m, 6m, 9m - Optional",
+									"disabled": true
+								},
+								{
+									"key": "start_date",
+									"value": "2025-03-12",
+									"description": "Date - Optional",
+									"disabled": true
+								},
+								{
+									"key": "end_date",
+									"value": "2025-03-13",
+									"description": "Date - Optional",
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Categories",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://{{API_ID}}.execute-api.us-east-1.amazonaws.com/prod/metrics/categories",
+							"protocol": "https",
+							"host": [
+								"{{API_ID}}",
+								"execute-api",
+								"us-east-1",
+								"amazonaws",
+								"com"
+							],
+							"path": [
+								"prod",
+								"metrics",
+								"categories"
+							],
+							"query": [
+								{
+									"key": "range",
+									"value": "3m",
+									"description": "7d, 30d, 3m, 6m, 9m - Optional",
+									"disabled": true
+								},
+								{
+									"key": "start_date",
+									"value": "2025-03-12",
+									"description": "Date -Optional",
+									"disabled": true
+								},
+								{
+									"key": "end_date",
+									"value": "2025-03-13",
+									"description": "Date - Optional",
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Performance",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://{{API_ID}}.execute-api.us-east-1.amazonaws.com/prod/metrics/performance",
+							"protocol": "https",
+							"host": [
+								"{{API_ID}}",
+								"execute-api",
+								"us-east-1",
+								"amazonaws",
+								"com"
+							],
+							"path": [
+								"prod",
+								"metrics",
+								"performance"
+							],
+							"query": [
+								{
+									"key": "range",
+									"value": "3m",
+									"description": "7d, 30d, 3m, 6m, 9m - Optional",
+									"disabled": true
+								},
+								{
+									"key": "start_date",
+									"value": "2025-03-12",
+									"description": "Date - Optional",
+									"disabled": true
+								},
+								{
+									"key": "end_date",
+									"value": "2025-03-13",
+									"description": "Date - Optional",
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Demographics",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://{{API_ID}}.execute-api.us-east-1.amazonaws.com/prod/metrics/demographics",
+							"protocol": "https",
+							"host": [
+								"{{API_ID}}",
+								"execute-api",
+								"us-east-1",
+								"amazonaws",
+								"com"
+							],
+							"path": [
+								"prod",
+								"metrics",
+								"demographics"
+							],
+							"query": [
+								{
+									"key": "range",
+									"value": "3m",
+									"description": "7d, 30d, 3m, 6m, 9m - Optional",
+									"disabled": true
+								},
+								{
+									"key": "start_date",
+									"value": "2025-03-12",
+									"description": "Date - Optional",
+									"disabled": true
+								},
+								{
+									"key": "end_date",
+									"value": "2025-03-13",
+									"description": "Date - Optional",
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{IdToken}}",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "CLIENT_ID",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "IdToken",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "API_ID",
+			"value": "",
+			"type": "string"
+		}
+	]
+}
