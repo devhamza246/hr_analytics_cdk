@@ -236,11 +236,60 @@ class HrAnalyticsCdkStack(Stack):
         )
 
     def create_api_method(self, resource, name, lambda_function, authorizer):
-        """Helper function to create API Gateway methods."""
+        """Helper function to create API Gateway methods with CORS."""
         endpoint = resource.add_resource(name)
+
+        # Allow CORS by adding OPTIONS method
+        endpoint.add_method(
+            "OPTIONS",
+            apigateway.MockIntegration(
+                integration_responses=[
+                    apigateway.IntegrationResponse(
+                        status_code="200",
+                        response_parameters={
+                            "method.response.header.Access-Control-Allow-Origin": "'*'",
+                            "method.response.header.Access-Control-Allow-Methods": "'OPTIONS,GET'",
+                            "method.response.header.Access-Control-Allow-Headers": "'Content-Type,Authorization'",
+                        },
+                    )
+                ],
+                passthrough_behavior=apigateway.PassthroughBehavior.WHEN_NO_MATCH,
+                request_templates={"application/json": '{"statusCode": 200}'},
+            ),
+            method_responses=[
+                apigateway.MethodResponse(
+                    status_code="200",
+                    response_parameters={
+                        "method.response.header.Access-Control-Allow-Origin": True,
+                        "method.response.header.Access-Control-Allow-Methods": True,
+                        "method.response.header.Access-Control-Allow-Headers": True,
+                    },
+                )
+            ],
+        )
+
+        # Add actual GET method
         endpoint.add_method(
             "GET",
-            apigateway.LambdaIntegration(lambda_function),
+            apigateway.LambdaIntegration(
+                lambda_function,
+                integration_responses=[
+                    apigateway.IntegrationResponse(
+                        status_code="200",
+                        response_parameters={
+                            "method.response.header.Access-Control-Allow-Origin": "'*'"
+                        },
+                    )
+                ],
+            ),
             authorization_type=apigateway.AuthorizationType.COGNITO,
             authorizer=authorizer,
+            method_responses=[
+                apigateway.MethodResponse(
+                    status_code="200",
+                    response_parameters={
+                        "method.response.header.Access-Control-Allow-Origin": True
+                    },
+                )
+            ],
         )

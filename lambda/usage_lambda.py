@@ -41,34 +41,62 @@ def handler(event, context):
         items = response.get("Items", [])
         result = process_usage_metrics(items)
 
-        return {"statusCode": 200, "body": json.dumps(result)}
+        return {
+            "statusCode": 200,
+            "headers": {
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Methods": "OPTIONS,GET",
+                "Access-Control-Allow-Headers": "Content-Type,Authorization",
+            },
+            "body": json.dumps(result),
+        }
 
     except Exception as e:
-        return {"statusCode": 500, "body": json.dumps({"error": str(e)})}
+        return {
+            "statusCode": 500,
+            "headers": {
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Methods": "OPTIONS,GET",
+                "Access-Control-Allow-Headers": "Content-Type,Authorization",
+            },
+            "body": json.dumps({"error": str(e)}),
+        }
 
 
 def get_time_range(start_date, end_date, time_range):
     """
     Determines the start and end datetime based on custom dates or predefined ranges.
     """
+
     try:
         if start_date and end_date:
             # Convert input strings to datetime objects
             start_time = datetime.strptime(start_date, "%Y-%m-%d")
             end_time = datetime.strptime(end_date, "%Y-%m-%d") + timedelta(
                 days=1
-            )  # Include the entire last day
+            )  # Include full last day
         else:
-            # Use predefined range (e.g., "7d", "30d")
-            days = int(time_range.replace("d", ""))
-            end_time = datetime.utcnow()
-            start_time = end_time - timedelta(days=days)
+            # Handle predefined ranges
+            end_time = datetime.now()
+            if time_range == "7d":
+                start_time = end_time - timedelta(days=7)
+            elif time_range == "30d":
+                start_time = end_time - timedelta(days=30)
+            elif time_range == "3m":
+                start_time = end_time - timedelta(days=90)  # 3 months
+            elif time_range == "6m":
+                start_time = end_time - timedelta(days=180)  # 6 months
+            elif time_range == "9m":
+                start_time = end_time - timedelta(days=270)  # 9 months
+            else:
+                # Default to last 7 days if the range is invalid
+                start_time = end_time - timedelta(days=7)
 
         return start_time, end_time
 
     except ValueError:
         # Fallback to default 7-day range if date parsing fails
-        return datetime.utcnow() - timedelta(days=7), datetime.utcnow()
+        return datetime.now() - timedelta(days=7), datetime.now()
 
 
 def process_usage_metrics(items):

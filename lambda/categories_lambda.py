@@ -11,16 +11,23 @@ table = dynamodb.Table(os.environ["DYNAMODB_TABLE"])
 def handler(event, context):
     """
     Lambda function to fetch category metrics and trending topics.
+    Supports filtering by custom date range or predefined last 7/14 days.
     """
 
     try:
-        # Set time ranges
+        # Extract query parameters from API Gateway request
+        query_params = event.get("queryStringParameters", {}) or {}
+        start_date = query_params.get("start_date")  # e.g., "2024-03-01"
+        end_date = query_params.get("end_date")  # e.g., "2024-03-10"
+        time_range = query_params.get("range", "7d")  # Default to last 7 days
+
+        # Determine the date range
         now = datetime.now()
-        recent_start = now - timedelta(days=7)  # Last 7 days
-        previous_start = now - timedelta(days=14)  # 7–14 days ago
+        recent_start, recent_end = get_time_range(start_date, end_date, time_range)
+        previous_start = recent_start - timedelta(days=7)  # Previous 7-day period
 
         # Fetch data from DynamoDB
-        recent_items = get_items_between(recent_start, now)
+        recent_items = get_items_between(recent_start, recent_end)
         previous_items = get_items_between(previous_start, recent_start)
 
         # Compute category metrics
@@ -37,6 +44,11 @@ def handler(event, context):
 
         return {
             "statusCode": 200,
+            "headers": {
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Methods": "OPTIONS,GET",
+                "Access-Control-Allow-Headers": "Content-Type,Authorization",
+            },
             "body": json.dumps(
                 {
                     "category_distribution": category_distribution,
@@ -49,7 +61,44 @@ def handler(event, context):
         }
 
     except Exception as e:
-        return {"statusCode": 500, "body": json.dumps({"error": str(e)})}
+        return {
+            "statusCode": 500,
+            "headers": {
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Methods": "OPTIONS,GET",
+                "Access-Control-Allow-Headers": "Content-Type,Authorization",
+            },
+            "body": json.dumps({"error": str(e)}),
+        }
+
+
+def get_time_range(start_date, end_date, time_range):
+    """
+    Determines the start and end datetime based on custom dates or predefined ranges.
+    """
+    try:
+        if start_date and end_date:
+            start_time = datetime.strptime(start_date, "%Y-%m-%d")
+            end_time = datetime.strptime(end_date, "%Y-%m-%d") + timedelta(
+                days=1
+            )  # Include full last day
+        else:
+            end_time = datetime.now()
+            if time_range == "7d":
+                start_time = end_time - timedelta(days=7)
+            elif time_range == "14d":
+                start_time = end_time - timedelta(days=14)
+            elif time_range == "30d":
+                start_time = end_time - timedelta(days=30)
+            elif time_range == "3m":
+                start_time = end_time - timedelta(days=90)  # 3 months
+            else:
+                start_time = end_time - timedelta(days=7)  # Default to last 7 days
+
+        return start_time, end_time
+
+    except ValueError:
+        return datetime.now() - timedelta(days=7), datetime.now()
 
 
 def get_items_between(start_time, end_time):

@@ -1,7 +1,7 @@
 import json
 import os
 import boto3
-from datetime import datetime
+from datetime import datetime, timedelta
 from collections import defaultdict
 
 # Initialize DynamoDB client
@@ -12,21 +12,90 @@ table = dynamodb.Table(os.environ["DYNAMODB_TABLE"])
 def handler(event, context):
     """
     Lambda function to fetch performance metrics from DynamoDB
-    and return structured data for frontend charting.
+    and return structured data for frontend charting with optional filtering.
     """
 
     try:
-        # Query all items from DynamoDB
-        response = table.scan()
-        items = response.get("Items", [])
+        # Extract query parameters from API Gateway request
+        query_params = event.get("queryStringParameters", {}) or {}
+        start_date = query_params.get("start_date")  # e.g., "2024-03-01"
+        end_date = query_params.get("end_date")  # e.g., "2024-03-10"
+        time_range = query_params.get("range", "7d")  # Default to last 7 days
 
-        # Process metrics
+        # Determine start and end timestamps
+        start_time, end_time = get_time_range(start_date, end_date, time_range)
+        start_timestamp = start_time.strftime("%Y-%m-%dT%H:%M:%SZ")
+        end_timestamp = end_time.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+        # Query DynamoDB with time filter
+        response = table.scan(
+            FilterExpression="#ts BETWEEN :start AND :end",
+            ExpressionAttributeNames={"#ts": "timestamp"},  # Alias for reserved keyword
+            ExpressionAttributeValues={
+                ":start": start_timestamp,
+                ":end": end_timestamp,
+            },
+        )
+
+        items = response.get("Items", [])
         result = process_performance_metrics(items)
 
-        return {"statusCode": 200, "body": json.dumps(result)}
+        return {
+            "statusCode": 200,
+            "headers": {
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Methods": "OPTIONS,GET",
+                "Access-Control-Allow-Headers": "Content-Type,Authorization",
+            },
+            "body": json.dumps(result),
+        }
 
     except Exception as e:
-        return {"statusCode": 500, "body": json.dumps({"error": str(e)})}
+        return {
+            "statusCode": 500,
+            "headers": {
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Methods": "OPTIONS,GET",
+                "Access-Control-Allow-Headers": "Content-Type,Authorization",
+            },
+            "body": json.dumps({"error": str(e)}),
+        }
+
+
+def get_time_range(start_date, end_date, time_range):
+    """
+    Determines the start and end datetime based on custom dates or predefined ranges.
+    """
+
+    try:
+        if start_date and end_date:
+            # Convert input strings to datetime objects
+            start_time = datetime.strptime(start_date, "%Y-%m-%d")
+            end_time = datetime.strptime(end_date, "%Y-%m-%d") + timedelta(
+                days=1
+            )  # Include full last day
+        else:
+            # Handle predefined ranges
+            end_time = datetime.now()
+            if time_range == "7d":
+                start_time = end_time - timedelta(days=7)
+            elif time_range == "30d":
+                start_time = end_time - timedelta(days=30)
+            elif time_range == "3m":
+                start_time = end_time - timedelta(days=90)  # 3 months
+            elif time_range == "6m":
+                start_time = end_time - timedelta(days=180)  # 6 months
+            elif time_range == "9m":
+                start_time = end_time - timedelta(days=270)  # 9 months
+            else:
+                # Default to last 7 days if the range is invalid
+                start_time = end_time - timedelta(days=7)
+
+        return start_time, end_time
+
+    except ValueError:
+        # Fallback to default 7-day range if date parsing fails
+        return datetime.now() - timedelta(days=7), datetime.now()
 
 
 def process_performance_metrics(items):
